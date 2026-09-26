@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Calculadora de Aportes BTC</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23183047%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2223%22%20fill%3D%22%23f2ae42%22%2F%3E%3Cpath%20d%3D%22M24%2018h14c7%200%207%2010%200%2010H24m0%200h16c7%200%207%2011%200%2011H24M29%2013v31m8-31v31%22%20fill%3D%22none%22%20stroke%3D%22%23183047%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+  <style>
+    :root {
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      color: #183047;
+      background: #f3f6f7;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .page { width: min(1160px, calc(100% - 40px)); margin: 0 auto; padding: 44px 0 72px; }
+    .intro { display: flex; justify-content: space-between; gap: 32px; align-items: end; padding-bottom: 30px; border-bottom: 2px solid #183047; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 620px; margin-bottom: 0; font-size: clamp(2.2rem, 4vw, 3.8rem); line-height: 1.07; letter-spacing: -.045em; font-weight: 650; }
+    .intro p { max-width: 340px; margin-bottom: 3px; color: #526777; line-height: 1.55; }
+    .section-heading { margin: 36px 0 16px; font-size: 1.38rem; letter-spacing: -.025em; }
+    .input-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .input-panel { background: #fff; border: 1px solid #dce5e9; border-radius: 12px; padding: 21px; }
+    .input-panel h3 { margin-bottom: 5px; font-size: 1.08rem; }
+    .input-panel > p { min-height: 44px; margin-bottom: 16px; color: #667987; line-height: 1.45; font-size: .88rem; }
+    .field { display: block; margin: 0 0 15px; }
+    .field:last-child { margin-bottom: 0; }
+    .field span { display: block; margin-bottom: 6px; font-size: .85rem; font-weight: 600; line-height: 1.35; }
+    .field input { width: 100%; height: 43px; border: 1px solid #b8c9d2; border-radius: 7px; padding: 0 12px; background: #fbfcfd; color: #183047; font: inherit; font-size: 1rem; font-variant-numeric: tabular-nums; }
+    .field input:focus-visible { outline: 3px solid #9dd3ca; outline-offset: 1px; border-color: #176b65; }
+    .field input[aria-invalid="true"] { border-color: #b34445; background: #fff8f8; }
+    .errors { margin: 18px 0 0; padding: 14px 18px; border: 1px solid #e3b8b8; border-radius: 9px; background: #fff4f3; color: #8a3034; }
+    .save-status { margin: 12px 0 0; color: #526777; font-size: .83rem; line-height: 1.45; }
+    .errors[hidden], .results[hidden], .table-section[hidden] { display: none; }
+    .errors ul { margin: 0; padding-left: 19px; line-height: 1.5; }
+    .results { margin-top: 32px; }
+    .result-hero { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; padding: 25px 29px; background: #183047; color: #fff; border-radius: 12px; }
+    .result-hero h2 { margin: 0 0 8px; font-size: 1.35rem; font-weight: 600; }
+    .result-hero p { margin: 0; color: #bed1db; font-size: .93rem; }
+    .hero-total { font-size: clamp(2.1rem, 5vw, 3.5rem); font-weight: 650; line-height: 1; letter-spacing: -.05em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+    .result-panel { padding: 21px; background: #fff; border: 1px solid #dce5e9; border-radius: 12px; }
+    .result-panel h3 { margin-bottom: 16px; font-size: 1.07rem; }
+    .result-panel dl { margin: 0; }
+    .metric { display: flex; justify-content: space-between; gap: 18px; align-items: baseline; padding: 10px 0; border-top: 1px solid #e9eef0; }
+    .metric dt { color: #526777; font-size: .89rem; line-height: 1.35; }
+    .metric dd { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin: 0; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .metric.emphasis dd { color: #11665f; font-size: 1.12rem; }
+    .copy-value { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #627482; cursor: pointer; }
+    .copy-value:hover, .copy-value.copied { background: #e9f5ed; color: #11665f; }
+    .copy-value:focus-visible { outline: 3px solid #9dd3ca; outline-offset: 1px; }
+    .copy-value svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .copy-status { margin: 10px 0 0; color: #526777; font-size: .84rem; }
+    .copy-status:empty { display: none; }
+    .note { margin: 17px 0 0; max-width: 920px; color: #526777; line-height: 1.55; font-size: .91rem; }
+    .table-section { margin-top: 43px; }
+    .table-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; margin-bottom: 10px; }
+    .table-heading h2 { margin: 0; font-size: 1.38rem; }
+    .table-heading p { margin: 0; color: #627482; font-size: .87rem; text-align: right; }
+    .table-wrap { overflow-x: auto; border: 1px solid #dce5e9; border-radius: 11px; background: #fff; }
+    table { width: 100%; min-width: 900px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 13px 14px; text-align: right; border-bottom: 1px solid #e3eaed; vertical-align: middle; }
+    th:first-child, td:first-child { text-align: left; font-weight: 650; }
+    th { background: #e8eff2; color: #354e60; font-size: .78rem; font-weight: 650; line-height: 1.35; }
+    td { font-size: .86rem; white-space: nowrap; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .tier-high { background: #fcf7f6; }
+    .tier-mid { background: #fffaf0; }
+    .tier-low { background: #f4faf4; }
+    .tier-deep { background: #e9f5ed; }
+    .table-message { padding: 18px; color: #526777; line-height: 1.5; }
+    @media (max-width: 900px) { .input-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .input-panel:last-child { grid-column: 1 / -1; } }
+    @media (max-width: 650px) {
+      .page { width: min(100% - 28px, 480px); padding-top: 26px; }
+      .intro { display: block; padding-bottom: 22px; }
+      .intro p { margin: 15px 0 0; }
+      .input-grid, .result-grid { grid-template-columns: 1fr; }
+      .input-panel:last-child { grid-column: auto; }
+      .input-panel > p { min-height: 0; }
+      .result-hero { display: block; padding: 23px; }
+      .hero-total { display: block; margin-top: 20px; white-space: normal; }
+      .table-heading { display: block; }
+      .table-heading p { margin-top: 7px; text-align: left; }
+      .metric { gap: 12px; }
+      .metric dt { max-width: 58%; }
+      .metric dd { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
+    <symbol id="copyIcon" viewBox="0 0 24 24">
+      <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+    </symbol>
+  </svg>
+  <main class="page">
+    <header class="intro">
+      <h1>Calculadora de Aportes BTC</h1>
+      <p>Ajuste os preços e os valores para ver quanto investir agora e como a estratégia se distribui pelas faixas.</p>
+    </header>
+
+    <section aria-labelledby="parameters-title">
+      <h2 class="section-heading" id="parameters-title">Parâmetros da estratégia</h2>
+      <div class="input-grid">
+        <div class="input-panel">
+          <h3>Preço do Bitcoin</h3>
+          <p>Referências usadas para calcular a curva de aportes e as faixas.</p>
+          <label class="field"><span>Preço atual do BTC (USD)</span><input id="currentPrice" type="number" min="0" step="any" inputmode="decimal" value="100000"></label>
+          <label class="field"><span>ATH de referência (USD)</span><input id="ath" type="number" min="0" step="any" inputmode="decimal" value="126000"></label>
+          <label class="field"><span>LTH / preço inferior (USD)</span><input id="lth" type="number" min="0" step="any" inputmode="decimal" value="60000"></label>
+          <label class="field"><span>Intervalo das faixas (USD)</span><input id="rangeInterval" type="number" min="0" step="any" inputmode="decimal" value="5000"></label>
+        </div>
+        <div class="input-panel">
+          <h3>Aporte mensal</h3>
+          <p>Capital novo do mês. A parte não investida é destinada à reserva após esta operação.</p>
+          <label class="field"><span>Aporte mensal disponível (BRL)</span><input id="monthlyAmount" type="number" min="0" step="0.01" inputmode="decimal" value="10000"></label>
+          <label class="field"><span>Aporte mínimo na ATH (%)</span><input id="minimumMonthlyPercent" type="number" min="0" max="100" step="any" inputmode="decimal" value="10"></label>
+        </div>
+        <div class="input-panel">
+          <h3>Reserva estratégica</h3>
+          <p>Informe o saldo disponível neste mês. A porcentagem indicada será aplicada a esse saldo.</p>
+          <label class="field"><span>Reserva disponível atualmente (BRL)</span><input id="reserveAvailable" type="number" min="0" step="0.01" inputmode="decimal" value="0"></label>
+          <label class="field"><span>Início da liberação (USD)</span><input id="reserveStartPrice" type="number" min="0" step="any" inputmode="decimal" value="90000"></label>
+          <label class="field"><span>Preço para liberar 100% (USD)</span><input id="reserveFullPrice" type="number" min="0" step="any" inputmode="decimal" value="40000"></label>
+        </div>
+      </div>
+      <p id="saveStatus" class="save-status" role="status" aria-live="polite"></p>
+      <div id="errors" class="errors" role="alert" hidden></div>
+    </section>
+
+    <section id="results" class="results" aria-labelledby="result-title" hidden>
+      <div class="result-hero">
+        <div><h2 id="result-title">Investimento recomendado agora</h2><p>Preço atual do BTC: <strong id="resultCurrentPrice"></strong></p></div>
+        <strong id="investmentTotal" class="hero-total"></strong>
+      </div>
+      <div class="result-grid">
+        <div class="result-panel">
+          <h3>Aporte mensal</h3>
+          <dl>
+            <div class="metric"><dt>Percentual a investir</dt><dd><span id="monthlyPercent"></span><button class="copy-value" type="button" data-copy-result="monthlyPercent" aria-label="Copiar percentual a investir" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+            <div class="metric"><dt>Aporte mensal disponível</dt><dd><span id="monthlyAvailable"></span><button class="copy-value" type="button" data-copy-result="monthlyAvailable" aria-label="Copiar aporte mensal disponível" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+            <div class="metric emphasis"><dt>Aporte mensal investido</dt><dd><span id="monthlyInvested"></span><button class="copy-value" type="button" data-copy-result="monthlyInvested" aria-label="Copiar aporte mensal investido" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+            <div class="metric"><dt>Novo valor destinado à reserva</dt><dd><span id="monthlyToReserve"></span><button class="copy-value" type="button" data-copy-result="monthlyToReserve" aria-label="Copiar novo valor destinado à reserva" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+          </dl>
+        </div>
+        <div class="result-panel">
+          <h3>Reserva estratégica</h3>
+          <dl>
+            <div class="metric"><dt>Reserva atual</dt><dd><span id="reserveCurrent"></span><button class="copy-value" type="button" data-copy-result="reserveCurrent" aria-label="Copiar reserva atual" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+            <div class="metric"><dt>Percentual da reserva a investir neste mês</dt><dd><span id="reserveMonthlyPercent"></span><button class="copy-value" type="button" data-copy-result="reserveMonthlyPercent" aria-label="Copiar percentual da reserva a investir" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+            <div class="metric emphasis"><dt>Investir da reserva neste mês</dt><dd><span id="reserveInvested"></span><button class="copy-value" type="button" data-copy-result="reserveInvested" aria-label="Copiar valor a investir da reserva" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+            <div class="metric"><dt>Reserva restante após a operação</dt><dd><span id="reserveRemaining"></span><button class="copy-value" type="button" data-copy-result="reserveRemaining" aria-label="Copiar reserva restante" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+            <div class="metric"><dt>Reserva para o próximo mês, se executar o plano</dt><dd><span id="reserveNextMonth"></span><button class="copy-value" type="button" data-copy-result="reserveNextMonth" aria-label="Copiar reserva projetada para o próximo mês" title="Copiar valor"><svg aria-hidden="true"><use href="#copyIcon"></use></svg></button></dd></div>
+          </dl>
+        </div>
+      </div>
+      <p id="copyStatus" class="copy-status" role="status" aria-live="polite"></p>
+      <p class="note">O aporte mensal e a reserva estratégica são calculados separadamente. A porcentagem da reserva é aplicada ao saldo disponível neste mês, mesmo que o preço seja igual ao do mês anterior. O novo valor destinado à reserva entra apenas no saldo projetado para o próximo mês.</p>
+    </section>
+
+    <section id="tableSection" class="table-section" aria-labelledby="table-title" hidden>
+      <div class="table-heading"><h2 id="table-title">Tabela de faixas</h2><p>Valores de cada faixa calculados pelo seu limite inferior.</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th scope="col">Faixa BTC</th>
+            <th scope="col">% aporte mensal</th>
+            <th scope="col">Aporte mensal investido</th>
+            <th scope="col">Mensal para reserva</th>
+            <th scope="col">% da reserva neste mês</th>
+            <th scope="col">Investir da reserva neste mês</th>
+          </tr></thead>
+          <tbody id="rangeRows"></tbody>
+        </table>
+      </div>
+      <p class="note">Cada linha é um cenário independente para o mês atual, usando o mesmo aporte mensal e o mesmo saldo de reserva informados acima. No próximo mês, atualize o saldo da reserva para obter novos valores.</p>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const MONTHLY_EXPONENT = 1.5;
+    const RESERVE_EXPONENT = 1.35;
+    const MAX_TABLE_ROWS = 2000;
+    const STORAGE_KEY = "investcoin.btc-contribution-calculator.v1";
+    const ids = ["currentPrice", "ath", "lth", "rangeInterval", "monthlyAmount", "minimumMonthlyPercent", "reserveAvailable", "reserveStartPrice", "reserveFullPrice"];
+    const inputs = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    const usd = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+    const percent = new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+    function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+    function roundMoney(value) { return Math.round((value + Number.EPSILON) * 100) / 100; }
+    function setText(id, value) { document.getElementById(id).textContent = value; }
+
+    function setSaveStatus(message) {
+      const status = document.getElementById("saveStatus");
+      if (status.textContent !== message) status.textContent = message;
+    }
+
+    function restoreInputs() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const values = JSON.parse(saved);
+          if (values && typeof values === "object" && !Array.isArray(values)) {
+            for (const id of ids) {
+              if (typeof values[id] === "string") inputs[id].value = values[id];
+            }
+            setSaveStatus("Valores recuperados deste navegador. Alterações são salvas automaticamente.");
+            return;
+          }
+        }
+        setSaveStatus("Alterações são salvas automaticamente neste navegador.");
+      } catch {
+        setSaveStatus("Este navegador não permitiu ler os valores salvos. Os campos usam os valores padrão.");
+      }
+    }
+
+    function saveInputs() {
+      const values = Object.fromEntries(ids.map(id => [id, inputs[id].value]));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+        setSaveStatus("Alterações salvas automaticamente neste navegador.");
+      } catch {
+        setSaveStatus("Este navegador não permitiu salvar os valores. Eles serão perdidos ao fechar a página.");
+      }
+    }
+
+    function readInputs() {
+      const values = {};
+      for (const id of ids) {
+        const raw = inputs[id].value.trim();
+        values[id] = raw === "" ? NaN : Number(raw);
+      }
+      return values;
+    }
+
+    function validateInputs(v) {
+      const errors = [];
+      for (const id of ids) inputs[id].removeAttribute("aria-invalid");
+      function reject(fields, message) {
+        errors.push(message);
+        fields.forEach(id => inputs[id].setAttribute("aria-invalid", "true"));
+      }
+      const positive = [["currentPrice", "O preço atual do BTC"], ["ath", "A ATH"], ["lth", "O LTH"], ["reserveStartPrice", "O preço de início da reserva"], ["rangeInterval", "O intervalo das faixas"]];
+      for (const [id, label] of positive) if (!Number.isFinite(v[id]) || v[id] <= 0) reject([id], `${label} deve ser maior que zero.`);
+      if (!Number.isFinite(v.reserveFullPrice) || v.reserveFullPrice < 0) reject(["reserveFullPrice"], "O preço de liberação total deve ser zero ou maior.");
+      for (const [id, label] of [["monthlyAmount", "O aporte mensal"], ["reserveAvailable", "A reserva disponível"]]) {
+        if (!Number.isFinite(v[id]) || v[id] < 0) reject([id], `${label} não pode ser negativo.`);
+        else if (Math.abs(v[id] * 100 - Math.round(v[id] * 100)) > 1e-7) reject([id], `${label} deve ter no máximo duas casas decimais.`);
+      }
+      if (!Number.isFinite(v.minimumMonthlyPercent) || v.minimumMonthlyPercent < 0 || v.minimumMonthlyPercent > 100) {
+        reject(["minimumMonthlyPercent"], "O aporte mínimo na ATH deve estar entre 0% e 100%.");
+      }
+      if (Number.isFinite(v.ath) && Number.isFinite(v.lth) && v.ath <= v.lth) reject(["ath", "lth"], "A ATH deve ser maior que o LTH.");
+      if (Number.isFinite(v.reserveStartPrice) && Number.isFinite(v.ath) && v.reserveStartPrice >= v.ath) reject(["reserveStartPrice", "ath"], "O início da liberação da reserva deve ser menor que a ATH.");
+      if (Number.isFinite(v.reserveFullPrice) && Number.isFinite(v.reserveStartPrice) && v.reserveFullPrice >= v.reserveStartPrice) reject(["reserveFullPrice", "reserveStartPrice"], "O preço de liberação total deve ser menor que o início da reserva.");
+      return errors;
+    }
+
+    function setCopyable(id, displayValue, inputValue) {
+      setText(id, displayValue);
+      const button = document.querySelector(`[data-copy-result="${id}"]`);
+      button.dataset.copyValue = inputValue;
+      button.classList.remove("copied");
+    }
+
+    async function copyResult(button) {
+      const value = button.dataset.copyValue;
+      if (!value) return;
+      let copied = false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(value);
+          copied = true;
+        }
+      } catch { /* Tenta a cópia compatível abaixo. */ }
+      if (!copied) {
+        const temporary = document.createElement("textarea");
+        temporary.value = value;
+        temporary.style.position = "fixed";
+        temporary.style.left = "-9999px";
+        document.body.appendChild(temporary);
+        temporary.select();
+        try { copied = document.execCommand("copy"); } catch { /* Cópia indisponível. */ }
+        temporary.remove();
+      }
+      const status = document.getElementById("copyStatus");
+      if (copied) {
+        for (const other of document.querySelectorAll(".copy-value")) other.classList.remove("copied");
+        button.classList.add("copied");
+        status.textContent = `${value} copiado. Pode colar esse número em um campo do formulário.`;
+      } else {
+        status.textContent = `Este navegador não permitiu copiar automaticamente. Copie este número: ${value}`;
+      }
+    }
+
+    function calculateMonthlyContributionPercentage(price, v) {
+      const minimum = v.minimumMonthlyPercent / 100;
+      if (price >= v.ath) return minimum;
+      if (price <= v.lth) return 1;
+      const distance = clamp((v.ath - price) / (v.ath - v.lth), 0, 1);
+      return clamp(minimum + (1 - minimum) * distance ** MONTHLY_EXPONENT, minimum, 1);
+    }
+
+    function calculateReserveMonthlyPercentage(price, v) {
+      if (price > v.reserveStartPrice) return 0;
+      if (price <= v.reserveFullPrice) return 1;
+      const distance = clamp((v.reserveStartPrice - price) / (v.reserveStartPrice - v.reserveFullPrice), 0, 1);
+      return clamp(distance ** RESERVE_EXPONENT, 0, 1);
+    }
+
+    function calculateMonthlyContribution(price, v) {
+      const percentage = calculateMonthlyContributionPercentage(price, v);
+      const invested = roundMoney(v.monthlyAmount * percentage);
+      return { percentage, invested, toReserve: roundMoney(v.monthlyAmount - invested) };
+    }
+
+    function calculateReserveRelease(price, v) {
+      const percentage = calculateReserveMonthlyPercentage(price, v);
+      const invested = roundMoney(Math.min(v.reserveAvailable, v.reserveAvailable * percentage));
+      return {
+        percentage, available: v.reserveAvailable, invested,
+        remaining: roundMoney(v.reserveAvailable - invested)
+      };
+    }
+
+    function generatePriceRanges(v) {
+      const top = (Math.floor(v.ath / v.rangeInterval) + 1) * v.rangeInterval;
+      const count = Math.ceil((top - v.reserveFullPrice) / v.rangeInterval) + 1;
+      if (!Number.isFinite(count) || count > MAX_TABLE_ROWS) return null;
+      const ranges = [];
+      for (let index = 0; index < count - 1; index++) {
+        const upper = top - index * v.rangeInterval;
+        const lower = Math.max(v.reserveFullPrice, top - (index + 1) * v.rangeInterval);
+        if (upper <= lower) break;
+        ranges.push({ lower, upper, price: lower, label: `${usd.format(lower)}–${usd.format(upper)}` });
+      }
+      ranges.push({ price: v.reserveFullPrice, label: `≤ ${usd.format(v.reserveFullPrice)}` });
+      return ranges;
+    }
+
+    function renderResults(v, monthly, reserve) {
+      setText("resultCurrentPrice", usd.format(v.currentPrice));
+      setText("investmentTotal", brl.format(roundMoney(monthly.invested + reserve.invested)));
+      setCopyable("monthlyPercent", percent.format(monthly.percentage), (monthly.percentage * 100).toFixed(1));
+      setCopyable("monthlyAvailable", brl.format(v.monthlyAmount), v.monthlyAmount.toFixed(2));
+      setCopyable("monthlyInvested", brl.format(monthly.invested), monthly.invested.toFixed(2));
+      setCopyable("monthlyToReserve", brl.format(monthly.toReserve), monthly.toReserve.toFixed(2));
+      setCopyable("reserveCurrent", brl.format(reserve.available), reserve.available.toFixed(2));
+      setCopyable("reserveMonthlyPercent", percent.format(reserve.percentage), (reserve.percentage * 100).toFixed(1));
+      setCopyable("reserveInvested", brl.format(reserve.invested), reserve.invested.toFixed(2));
+      setCopyable("reserveRemaining", brl.format(reserve.remaining), reserve.remaining.toFixed(2));
+      const reserveNextMonth = roundMoney(reserve.remaining + monthly.toReserve);
+      setCopyable("reserveNextMonth", brl.format(reserveNextMonth), reserveNextMonth.toFixed(2));
+    }
+
+    function tierFor(price, v) {
+      if (price <= v.lth) return "tier-deep";
+      const distance = clamp((v.ath - price) / (v.ath - v.lth), 0, 1);
+      if (distance < .25) return "tier-high";
+      if (distance < .65) return "tier-mid";
+      return "tier-low";
+    }
+
+    function renderTable(v) {
+      const body = document.getElementById("rangeRows");
+      const ranges = generatePriceRanges(v);
+      if (!ranges) {
+        body.replaceChildren();
+        const row = body.insertRow();
+        const cell = row.insertCell();
+        cell.colSpan = 6;
+        cell.className = "table-message";
+        cell.textContent = "O intervalo gera mais de 2.000 faixas. Aumente o intervalo para visualizar a tabela completa.";
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      for (const range of ranges) {
+        const monthly = calculateMonthlyContribution(range.price, v);
+        const reserveAtRange = calculateReserveRelease(range.price, v);
+        const row = document.createElement("tr");
+        row.className = tierFor(range.price, v);
+        const values = [range.label, percent.format(monthly.percentage), brl.format(monthly.invested), brl.format(monthly.toReserve), percent.format(reserveAtRange.percentage), brl.format(reserveAtRange.invested)];
+        for (const value of values) {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        }
+        fragment.appendChild(row);
+      }
+      body.replaceChildren(fragment);
+    }
+
+    function update() {
+      const values = readInputs();
+      const errors = validateInputs(values);
+      const errorBox = document.getElementById("errors");
+      const results = document.getElementById("results");
+      const table = document.getElementById("tableSection");
+      if (errors.length) {
+        const list = document.createElement("ul");
+        for (const message of errors) {
+          const item = document.createElement("li");
+          item.textContent = message;
+          list.appendChild(item);
+        }
+        errorBox.replaceChildren(list);
+        errorBox.hidden = false;
+        results.hidden = true;
+        table.hidden = true;
+        return;
+      }
+      errorBox.hidden = true;
+      const monthly = calculateMonthlyContribution(values.currentPrice, values);
+      const reserve = calculateReserveRelease(values.currentPrice, values);
+      renderResults(values, monthly, reserve);
+      renderTable(values);
+      results.hidden = false;
+      table.hidden = false;
+    }
+
+    restoreInputs();
+    for (const input of Object.values(inputs)) input.addEventListener("input", () => {
+      saveInputs();
+      document.getElementById("copyStatus").textContent = "";
+      update();
+    });
+    for (const button of document.querySelectorAll(".copy-value")) {
+      button.addEventListener("click", () => copyResult(button));
+    }
+    update();
+  </script>
+</body>
+</html>
