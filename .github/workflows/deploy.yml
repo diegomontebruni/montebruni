@@ -3,7 +3,7 @@
 # A chave SSH usada aqui é restrita no servidor (authorized_keys com `restrict` + rrsync):
 # só sincroniza a pasta do site, não abre shell nem alcança outro caminho.
 #
-# Secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_HOST_KEY (linha do known_hosts), SITE_URL.
+# Secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_HOST_KEY, SITE_URL.
 name: deploy
 
 on:
@@ -33,7 +33,9 @@ jobs:
           umask 077
           mkdir -p ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          printf '%s\n' "$DEPLOY_HOST_KEY" > ~/.ssh/known_hosts
+          printf '%s %s\n' "$DEPLOY_HOST" "$DEPLOY_HOST_KEY" > ~/.ssh/known_hosts
+          ssh-keygen -F "$DEPLOY_HOST" -f ~/.ssh/known_hosts >/dev/null \
+            || { echo "known_hosts inválido: confira DEPLOY_HOST e DEPLOY_HOST_KEY"; exit 1; }
 
       - name: Sincronizar
         run: |
