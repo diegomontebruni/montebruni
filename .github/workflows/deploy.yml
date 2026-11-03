@@ -1,0 +1,52 @@
+# Deploy do site: push na `main` → rsync dos arquivos para o servidor.
+#
+# A chave SSH usada aqui é restrita no servidor (authorized_keys com `restrict` + rrsync):
+# só sincroniza a pasta do site, não abre shell nem alcança outro caminho.
+#
+# Secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_HOST_KEY (linha do known_hosts), SITE_URL.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST_KEY: ${{ secrets.DEPLOY_HOST_KEY }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_HOST_KEY" > ~/.ssh/known_hosts
+
+      - name: Sincronizar
+        run: |
+          rsync -az --delete -q \
+            --exclude '.git' --exclude '.github' --exclude '.claude' --exclude '.junie' \
+            --exclude '.idea' --exclude '.gitignore' --exclude 'docker-compose.yml' --exclude '.DS_Store' \
+            -e 'ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o LogLevel=ERROR' \
+            ./ "$DEPLOY_USER@$DEPLOY_HOST:/"
+
+      - name: Verificar
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          curl -sfo /dev/null --max-time 20 \
+            -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36' \
+            "$SITE_URL" && echo ok
